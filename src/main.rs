@@ -2,6 +2,7 @@ extern crate rustc_serialize;
 extern crate quick_xml;
 
 use std::collections::HashMap;
+use std::collections::HashSet;
 use rustc_serialize::json::Json;
 use std::fs::File;
 use std::io::Read;
@@ -95,21 +96,23 @@ fn build_dep_tree(drv_paths: Vec<String>) -> HashMap<String, Vec<String>> {
     res
 }
 
-fn calculate_rebuild_cost(revdep_map: &HashMap<String, Vec<String>>, cost_map: &mut HashMap<String, u32>, drv: &String) -> u32 {
+fn calculate_revdep_closure(revdep_map: &HashMap<String, Vec<String>>, revdep_closure_map: &mut HashMap<String, HashSet<String>>, drv: &String) -> HashSet<String> {
     // Already calculated?
-    match cost_map.get(drv) {
-        Some(x) => return *x,
+    match revdep_closure_map.get(drv) {
+        Some(x) => return x.clone(),
         _ => (),
     }
 
     let revdeps = revdep_map.get(drv).unwrap();
-    println!("calculating {} -> {}: {:?}", drv, revdeps.len(), revdeps);
-    let mut cost = 1;
+    let mut closure_set = HashSet::new();
+    closure_set.insert(drv.clone());
     for revdep in revdeps {
-        cost += calculate_rebuild_cost(revdep_map, cost_map, revdep);
+        for v in calculate_revdep_closure(revdep_map, revdep_closure_map, revdep) {
+            closure_set.insert(v);
+        }
     }
-    cost_map.insert(drv.clone(), cost);
-    cost
+    revdep_closure_map.insert(drv.clone(), closure_set.clone());
+    closure_set
 }
 
 fn main() {
@@ -121,11 +124,11 @@ fn main() {
     let mut rebuild_cost_map = HashMap::new();
 
     let drv = attr_map.get("SDL2").unwrap();
-    println!("{}: {:?}", drv, calculate_rebuild_cost(&revdep_tree, &mut rebuild_cost_map, drv));
+    println!("{}: {:?}", drv, calculate_revdep_closure(&revdep_tree, &mut rebuild_cost_map, drv));
 
-//    for (attr, drv) in &attr_map {
-//        let cost = calculate_rebuild_cost(&revdep_tree, &mut rebuild_cost_map, &drv);
-//        println!("{} {}", cost, attr);
-//    }
+    for (attr, drv) in &attr_map {
+        let cost = calculate_revdep_closure(&revdep_tree, &mut rebuild_cost_map, &drv).len();
+        println!("{} {}", cost, attr);
+    }
 
 }
