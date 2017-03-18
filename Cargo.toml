@@ -5,3 +5,4 @@ authors = ["Tuomas Tynkkynen <tuomas@tuxera.com>"]
 
 [dependencies]
 rustc-serialize = "0.3"
+quick-xml = "0.6.2"
