@@ -95,13 +95,37 @@ fn build_dep_tree(drv_paths: Vec<String>) -> HashMap<String, Vec<String>> {
     res
 }
 
+fn calculate_rebuild_cost(revdep_map: &HashMap<String, Vec<String>>, cost_map: &mut HashMap<String, u32>, drv: &String) -> u32 {
+    // Already calculated?
+    match cost_map.get(drv) {
+        Some(x) => return *x,
+        _ => (),
+    }
+
+    let revdeps = revdep_map.get(drv).unwrap();
+    println!("calculating {} -> {}: {:?}", drv, revdeps.len(), revdeps);
+    let mut cost = 1;
+    for revdep in revdeps {
+        cost += calculate_rebuild_cost(revdep_map, cost_map, revdep);
+    }
+    cost_map.insert(drv.clone(), cost);
+    cost
+}
+
 fn main() {
     let attr_map = build_attr_map();
     //    for (attr, drv_path) in attr_map {
     //        println!("{}", drv_path);
     //    }
-    let dep_tree = build_dep_tree(attr_map.values().map(|x| x.clone()).collect());
-    for (drv, rev_deps) in dep_tree {
-        println!("{} {}", rev_deps.len(), drv);
-    }
+    let revdep_tree = build_dep_tree(attr_map.values().map(|x| x.clone()).collect());
+    let mut rebuild_cost_map = HashMap::new();
+
+    let drv = attr_map.get("SDL2").unwrap();
+    println!("{}: {:?}", drv, calculate_rebuild_cost(&revdep_tree, &mut rebuild_cost_map, drv));
+
+//    for (attr, drv) in &attr_map {
+//        let cost = calculate_rebuild_cost(&revdep_tree, &mut rebuild_cost_map, &drv);
+//        println!("{} {}", cost, attr);
+//    }
+
 }
