@@ -1,0 +1,7 @@
+[package]
+name = "nix-rebuild-stats"
+version = "0.1.0"
+authors = ["Tuomas Tynkkynen <tuomas@tuxera.com>"]
+
+[dependencies]
+rustc-serialize = "0.3"
