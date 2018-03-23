@@ -117,14 +117,8 @@ fn calculate_revdep_closure(revdep_map: &HashMap<String, Vec<String>>, revdep_cl
 
 fn main() {
     let attr_map = build_attr_map();
-    //    for (attr, drv_path) in attr_map {
-    //        println!("{}", drv_path);
-    //    }
     let revdep_tree = build_dep_tree(attr_map.values().map(|x| x.clone()).collect());
     let mut rebuild_cost_map = HashMap::new();
-
-    let drv = attr_map.get("SDL2").unwrap();
-    println!("{}: {:?}", drv, calculate_revdep_closure(&revdep_tree, &mut rebuild_cost_map, drv));
 
     for (attr, drv) in &attr_map {
         let cost = calculate_revdep_closure(&revdep_tree, &mut rebuild_cost_map, &drv).len();
